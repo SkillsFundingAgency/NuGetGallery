@@ -42,10 +42,18 @@ class PDSSubscription {
 
     [void] Create() {
         try {
-            Select-AzureRmSubscription -SubscriptionId $this.SubscriptionId -ErrorAction Stop
             Select-AzureSubscription -SubscriptionId $this.SubscriptionId -ErrorAction Stop
         }
         catch {
+            Write-Error "Couldn't select the subscription in ASM, have you forgotten to do Add-AzureAccount?"
+            return;
+        }
+
+        try {
+            Select-AzureSubscription -SubscriptionId $this.SubscriptionId -ErrorAction Stop
+        }
+        catch {
+            Write-Error "Couldn't select the subscription in ARM, have you forgotten to do Login-AzureRmAccount?"
             return;
         }
 
@@ -62,7 +70,7 @@ class PDSSubscription {
             Write-Warning "Skipping the creation of the subscription Resource Group $($this.RgName) because it already exists"
         }
 
-        New-AzureRmResourceGroupDeployment -Name ($this.RgName + "-deployment") -ResourceGroupName $this.RgName -Mode Complete -TemplateFile $this.TemplateFile -TemplateParameterObject @{storageName=$this.StorageName;classicstorageName=$this.ClassicStorageName} -Force -Verbose
+        New-AzureRmResourceGroupDeployment -Name ($this.RgName + "-deployment") -ResourceGroupName $this.RgName -Mode Incremental -TemplateFile $this.TemplateFile -TemplateParameterObject @{storageName=$this.StorageName;classicstorageName=$this.ClassicStorageName} -Force -Verbose
 
         $this.Environments | ForEach-Object { $_.Create(); }
     }
@@ -111,7 +119,7 @@ class PDSEnvironment {
             Write-Warning "Skipping the creation of the Resource Group $($this.RgName) because it already exists"
         }
 
-        New-AzureRmResourceGroupDeployment -Name ($this.RgName + "-deployment") -ResourceGroupName $this.RgName -Mode Complete -TemplateFile $this.TemplateFile -TemplateParameterObject @{envName=$this.Name;sqlPassword=$this.SqlPassword;configuration=$this.Configuration} -Force -Verbose
+        New-AzureRmResourceGroupDeployment -Name ($this.RgName + "-deployment") -ResourceGroupName $this.RgName -Mode Incremental -TemplateFile $this.TemplateFile -TemplateParameterObject @{envName=$this.Name;sqlPassword=$this.SqlPassword;configuration=$this.Configuration} -Force -Verbose
 
         ##################################################################################################
         # Need to provision the stuff that ARM doesn't support, or the stuff I want to provision in a way
