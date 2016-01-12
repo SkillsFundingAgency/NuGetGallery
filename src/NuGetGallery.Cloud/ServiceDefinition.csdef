@@ -64,8 +64,6 @@
       </InstanceInputEndpoint>
     </Endpoints>
     <Imports>
-      <Import moduleName="RemoteAccess" />
-      <Import moduleName="RemoteForwarder" />
       <Import moduleName="Diagnostics" />
     </Imports>
     <Certificates>

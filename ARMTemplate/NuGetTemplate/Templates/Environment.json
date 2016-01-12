@@ -1,0 +1,105 @@
+﻿{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "envName": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 8
+    },
+    "sqlPassword": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 64
+    },
+    "configuration": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 8
+    },
+  },
+  "resources": [
+    {
+      "name": "[concat('nuget-sql-', parameters('envName'))]",
+      "type": "Microsoft.Sql/servers",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "displayName": "SqlServer",
+        "Configuration": "[parameters('configuration')]",
+        "Environment": "[parameters('envName')]",
+        "System": "NuGet"
+      },
+      "apiVersion": "2014-04-01-preview",
+      "properties": {
+        "administratorLogin": "nugetmega",
+        "administratorLoginPassword": "[parameters('sqlPassword')]",
+        "version": "12.0"
+      },
+      "resources": [
+        {
+          "name": "[concat('nuget-db-', parameters('envName'))]",
+          "type": "databases",
+          "location": "[resourceGroup().location]",
+          "tags": {
+            "displayName": "Database",
+            "Configuration": "[parameters('configuration')]",
+            "Environment": "[parameters('envName')]",
+            "System": "NuGet"
+          },
+          "apiVersion": "2014-04-01-preview",
+          "dependsOn": [
+            "[concat('Microsoft.Sql/servers/nuget-sql-', parameters('envName'))]"
+          ],
+          "properties": {
+            "edition": "Standard",
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            "maxSizeBytes": "5368709120",
+            "requestedServiceObjectiveId": "F1173C43-91BD-4AAA-973C-54E79E15235B"
+          }
+        },
+        {
+          "type": "firewallrules",
+          "apiVersion": "2014-04-01-preview",
+          "dependsOn": [
+            "[concat('Microsoft.Sql/servers/nuget-sql-', parameters('envName'))]"
+          ],
+          "location": "[resourceGroup().location]",
+          "name": "AllowAllWindowsAzureIps",
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "0.0.0.0"
+          }
+        },
+        {
+          "type": "firewallrules",
+          "apiVersion": "2014-04-01-preview",
+          "dependsOn": [
+            "[concat('Microsoft.Sql/servers/nuget-sql-', parameters('envName'))]"
+          ],
+          "location": "[resourceGroup().location]",
+          "name": "SfaLan",
+          "properties": {
+            "startIpAddress": "193.240.137.225",
+            "endIpAddress": "193.240.137.254"
+          }
+        }
+      ]
+    },
+    {
+      "apiVersion": "2014-04-01",
+      "name": "[concat('nuget-appinsights-', parameters('envName'))]",
+      "type": "Microsoft.Insights/components",
+      "location": "Central US",
+      "tags": {
+        "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', concat('pds-sfs-webfarm-', parameters('envName')))]": "Resource",
+        "displayName": "AppInsights",
+        "Configuration": "[parameters('configuration')]",
+        "Environment": "[parameters('envName')]",
+        "System": "NuGet"
+      },
+      "properties": {
+        "applicationId": "[concat('nuget-appinsights-', parameters('envName'))]"
+      }
+    }
+  ]
+}
