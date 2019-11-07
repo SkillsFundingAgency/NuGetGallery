@@ -1,3 +1,5 @@
+# This fork is no longer supported
+
 [NuGet Gallery](http://nuget.org/) — Where packages are found 
 =======================================================================
 
